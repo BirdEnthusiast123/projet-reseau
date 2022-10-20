@@ -1,0 +1,13 @@
+# Continuous integration
+
+# S'assurer que le code compile
+image: gcc
+
+build:
+    script:
+        - echo "Compiling source files"
+        - make
+        - echo "Compile complete."
+
+
+# TODO : Ajouter les scripts de test qu'on nous donnera
