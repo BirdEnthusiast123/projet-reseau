@@ -3,7 +3,7 @@
 
 
 ## Description
-Ce projet entre dans le cadre de notre formation L3 d'Informatique à l'Université de Strasbourg, de l'Unité d'Enseignement: Algorithmes des Réseaux. Il est question de créer une simulation du jeu `Light Cycles` de la franchise `Tron` en multijoueur en ligne ou local via Cloud Computing.
+Ce projet entre dans le cadre de notre formation L3 d'Informatique à l'Université de Strasbourg, de l'Unité d'Enseignement: Algorithmes des Réseaux. Il est le résultat de modifications de code procuré par l'Université de Strasbourg par Raphaël TOSCANO et Florent HARDY. Il est question de créer une simulation du jeu `Light Cycles` de la franchise `Tron` en multijoueur en ligne ou local via Cloud Computing. (voir sujet: [page moodle](https://moodle.unistra.fr/mod/resource/view.php?id=703877))
 
 ## Attentes du sujet / Cahier des charges
 Rendre une archive `.zip` dont le nom contiendra nos noms et prénoms. Cette archive contiendra un rapport, du code C ainsi qu'un `makefile`.
