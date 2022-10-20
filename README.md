@@ -1,92 +1,49 @@
-# L3-Reseau-Projet
+# Projet d'Algorithmes des Réseaux 
 
 
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://git.unistra.fr/fhardy/l3-reseau-projet.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://git.unistra.fr/fhardy/l3-reseau-projet/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Ce projet entre dans le cadre de notre formation L3 d'Informatique à l'Université de Strasbourg, de l'Unité d'Enseignement: Algorithmes des Réseaux. Il est question de créer une simulation du jeu `Light Cycles` de la franchise `Tron` en multijoueur en ligne ou local via Cloud Computing.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## Attentes du sujet / Cahier des charges
+Rendre une archive `.zip` dont le nom contiendra nos noms et prénoms. Cette archive contiendra un rapport, du code C ainsi qu'un `makefile`.
+- Rapport: pdf qui servira à commenter/expliquer les choix d’implémentation lorsque nécessaire. Ainsi qu'une réponse aux questions: 
+    - Discutez des avantages et inconvénients de ce genre d’architecture. En particulier, examinez l’impact des caractéristiques physiques de la connexion (délai, gigue, taux de pertes...). 
+    - L’utilisation du protocole TCP est-elle souhaitable pour les jeux en ligne? Qu’en est-il du Cloud Gaming? Idéalement, quel(s) protocoles utiliseriez-vous dans le cas présent?
+- Code C: 
+    - gestion d'une connexion à 1 joueur⸱euse voulant jouer avec un⸱e autre joueur⸱euse en ligne;
+    - gestion d'une connexion à 2 joueurs⸱euses voulant jouer sur un unique clavier;
+    - gestion du serveur responsable du Cloud Computing.
+- `makefile`: doit compiler du code commenté et indenté.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Serveur
+- Sujet: `Le serveur maintient l’état actuel du jeu et est chargé de calculer et mettre à jour les nouvelles positions des joueurs.`
+- Usage: `./serveur [port_serveur] [refresh_rate]` où `refresh_rate` est le temps en millisecondes entre chaque envoi aux client⸱e⸱s. `refresh_rate` n'influe pas sur la gestion des inputs reçus par le serveur, envoyés par les client⸱e⸱s. (e.g. Si le/la client⸱e envoie les inputs `'z', 's' et 'd'` les uns après les autres, tous devront être pris en compte. Le dernier input en mémoire après écoulement des `refresh_rate`ms sera celui renvoyé au client).
+- Doit également accepter les commandes :
+    - `restart` qui permet de redémarrer;
+    - `quit` qui permet de quitter.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Client⸱e⸱s
+- Usage: `./client [IP_serveur] [port_serveur] [nb_joueurs]`
+- Doit surveiller les inputs claviers de la machine locale et les messages envoyés par le serveur.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Détails d'implémentation
+Structures de données à respecter présentes dans `common.h`:
+- `client_init`: contient les informations nécessaires pour indiquer le nombre de joueurs derrière un même client. Elle doit être envoyée dès que la tentative de connexion d’un client a été acceptée.
+- `client_input`: contient les informations envoyées par le client lorsqu’une commande est passée (parmi: `'z','q','s','d',' ','i','j','k','l','m'`).
+- `display_info`: contient toutes les informations actuelles du plateau de jeu. `board` entre autres.
+- `board`: fait partie de `display_info`, est un tableau de `char` tel que:
+    - `0,1,2,3,4`: sont des identifiants de joueurs;
+    - `50,51,52,53,54`: sont réservés pour les mûrs de lumière créés par les joueurs. Correspond à `id_joueur + 50`;
+    - pas compris la partie sur les couleurs :/ on verra bien.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Idées d'améliorations
+**/!\ ATTENTION /!\ : IL FAUT GARDER UNE VERSION BASIQUE DU PROJET QUI RÉPOND UNIQUEMENT AU CAHIER DES CHARGES ET CRÉER UN DIFFÉRENT PROJET QUI SERA ENVOYÉ À PART.**
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Le sujet propose des idées à implémenter pour des points bonus:
+- l'un⸱e des deux joueurs⸱euses est choisi⸱e pour héberger la partie, iel s'occupe de faire les calculs;
+- passer de TCP à UDP;
+- permettre des parties à plus de 2 joueurs⸱euses (FFA ou par équipes);
+- autre.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
