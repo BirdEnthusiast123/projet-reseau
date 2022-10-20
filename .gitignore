@@ -1,2 +1,3 @@
 *.o
+*.yml
 client_template
