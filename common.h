@@ -27,6 +27,20 @@
 #define TIE -2
 #define TRAIL_INDEX_SHIFT 50
 
+#define NB_COLORS 5
+
+#define BLUE_ON_BLACK       0
+#define RED_ON_BLACK        2
+#define YELLOW_ON_BLACK     1
+#define MAGENTA_ON_BLACK    3
+#define CYAN_ON_BLACK       4
+
+#define BLUE_ON_BLUE        50
+#define RED_ON_RED          52
+#define YELLOW_ON_YELLOW    51
+#define MAGENTA_ON_MAGENTA  53
+#define CYAN_ON_CYAN        54
+
 #define SA struct sockaddr
 #define SAI struct sockaddr_in
 #define TV struct timeval

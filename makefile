@@ -1,7 +1,7 @@
 CFLAGS = -g -Wall -Wextra 
 INCLUDE = -lncurses
 
-EXEC_FILE = client_template
+EXEC_FILE = client_template client server
 SOURCES = $(addsuffix .c, $(EXEC_FILE))
 OBJECTS= $(SOURCES:.c=.o)
 
