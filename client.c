@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
                     sizeof(client_input), 
                     0, 
                     (struct sockaddr *)&server_struct, 
-                    sizeof(server_struct)
+                    sizeof_struct
                 ) 
                 > 0
             );
