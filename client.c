@@ -7,7 +7,6 @@
 #include <ncurses.h>
 
 #include "common.h"
-#include "check.h"
 
 #define BUF_MAX_SIZE 16
 
