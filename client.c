@@ -8,8 +8,6 @@
 
 #include "common.h"
 
-#define BUF_MAX_SIZE 16
-
 void tune_terminal()
 {
     struct termios term;
@@ -55,9 +53,9 @@ void display_character(int color, int y, int x, char character)
 // TODO: ajouter les conventions par exemple: moto := '8', mur := ACS_VLINE
 void print_game(char board[XMAX][YMAX])
 {
-    for (size_t i = 0; i < YMAX; i++)
-        for (size_t j = 0; j < XMAX; j++)
-            display_character(board[i][j], i, j, 'X');
+    for (size_t x = 0; x < XMAX; x++)
+        for (size_t y = 0; y < YMAX; y++)
+            display_character(board[x][y], y, x, 'X');
 }
 
 int main(int argc, char *argv[])
@@ -71,25 +69,28 @@ int main(int argc, char *argv[])
     // Récupération des arguments
     char *arg_addr = argv[1];
     int arg_port = atoi(argv[2]);
-    int arg_player_count = atoi(argv[3]);
+    struct client_init_infos client_info;
+    client_info.nb_players = atoi(argv[3]);
 
-    // Buffer de réception et d'envoi
-    char buf[BUF_MAX_SIZE];
-    int buf_size;
-
+    // Buffers de réception et d'envoi
+    struct client_input client_input;
     display_info display;
 
     // Paramètres de connexion
+    // Socket
     int sockfd;
+    CHECK((sockfd = socket(AF_INET, SOCK_STREAM, 0)) != -1);
+
+    // Connect
     struct sockaddr_in server_struct;
+    unsigned int sizeof_struct = sizeof(server_struct);
 
     server_struct.sin_family = AF_INET;
     server_struct.sin_port = htons(arg_port);
     server_struct.sin_addr.s_addr = inet_addr(arg_addr);
     memset(&(server_struct.sin_zero), '\0', 8);
 
-    CHECK((sockfd = socket(AF_INET, SOCK_STREAM, 0)) != -1);
-    CHECK(connect(sockfd, (struct sockaddr *)&server_struct, sizeof(server_struct)) != -1);
+    CHECK(connect(sockfd, (struct sockaddr *)&server_struct, sizeof_struct) != -1);
 
     // tune_terminal -> les inputs sont détectés directement
     // plus besoin de la touche 'entrée'
@@ -97,8 +98,33 @@ int main(int argc, char *argv[])
     init_graphics();
 
     // Envoi du nombre de joueurs au server
-    unsigned int sizeof_struct = sizeof(server_struct);
-    CHECK(sendto(sockfd, &arg_player_count, sizeof(int), 0, (struct sockaddr *)&server_struct, sizeof_struct) > 0);
+    CHECK(
+        sendto(
+            sockfd, 
+            &(client_info.nb_players), 
+            sizeof(client_info.nb_players), 
+            0, 
+            (struct sockaddr *)&server_struct, 
+            sizeof_struct
+        ) 
+        > 0
+    );
+
+    // Réception de l'id que nous donne le server
+    if(client_info.nb_players < 2)
+    {
+        CHECK(
+            recvfrom(
+                sockfd, 
+                &(client_input.id), 
+                sizeof(client_input.id), 
+                0, 
+                (struct sockaddr *)&server_struct, 
+                &sizeof_struct
+            ) 
+            > 0
+        );
+    }
 
     // Initialisation 'select'
     fd_set ens, tmp;
@@ -113,21 +139,42 @@ int main(int argc, char *argv[])
         // Gestion d'envoi d'inputs du client au server
         if (FD_ISSET(STDIN_FILENO, &tmp))
         {
-            CHECK((buf_size = read(STDIN_FILENO, buf, 1024)) > 0);
-            buf[buf_size] = '\0';
+            CHECK(read(STDIN_FILENO, &(client_input.input), sizeof(client_input.input)) > 0);
 
-            CHECK(sendto(sockfd, buf, buf_size, 0, (struct sockaddr *)&server_struct, sizeof(server_struct)) > 0);
+            CHECK(
+                sendto(
+                    sockfd, 
+                    &client_input, 
+                    sizeof(client_input), 
+                    0, 
+                    (struct sockaddr *)&server_struct, 
+                    sizeof(server_struct)
+                ) 
+                > 0
+            );
         }
 
         // Réception et affichage du board envoyé par le serveur
         if (FD_ISSET(sockfd, &tmp))
         {
-            CHECK((buf_size = recvfrom(sockfd, display.board, XMAX * YMAX, 0, (struct sockaddr *)&server_struct, &sizeof_struct)) > 0);
+            // TODO: Peut etre tester (recvfrom(...) == XMAX * YMAX) si faux alors pertes/manque
+            CHECK(
+                recvfrom(
+                    sockfd, 
+                    display.board, 
+                    XMAX * YMAX, 
+                    0, 
+                    (struct sockaddr *)&server_struct, 
+                    &sizeof_struct
+                ) 
+                > 0
+            );
             clear();
             print_game(display.board);
             refresh();
         }
 
+        // Réinitialiser le mask de select
         tmp = ens;
     }
 

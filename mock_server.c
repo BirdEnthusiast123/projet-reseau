@@ -20,9 +20,9 @@
 
 void generate_random_board(char board[XMAX][YMAX])
 {
-    for (size_t i = 0; i < YMAX; i++)
+    for (size_t i = 0; i < XMAX; i++)
     {
-        for (size_t j = 0; j < XMAX; j++)
+        for (size_t j = 0; j < YMAX; j++)
         {
             board[i][j] = (rand() % NB_COLORS);
         }
@@ -98,14 +98,18 @@ int main(int argc, char **argv)
     
     printf("Connexion with: %d, port no: %d, succesful, message received: %d \n", client.sin_addr.s_addr, client.sin_port, players);
 
-    if (sendto(new_fd, "ACK", 4, 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
+    if(players < 2)
     {
-        perror("erreur a l'appel de la fonction sendto -> ");
-        exit(-2);
+        int tmp = 1;
+        if (sendto(new_fd, &tmp, 4, 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
+        {
+            perror("erreur a l'appel de la fonction sendto -> ");
+            exit(-2);
+        }
     }
 
-    char buf_char[6001];
     char board[XMAX][YMAX];
+    struct client_input client_in;
     int pid = fork();
 
     if (pid == -1)
@@ -119,13 +123,13 @@ int main(int argc, char **argv)
         while (1)
         {
             memset(buf, 0, 1024);
-            if (recvfrom(new_fd, (void *)buf, 1024, 0, (struct sockaddr *)&client, &fromlen) < 1)
+            if (recvfrom(new_fd, &client_in, sizeof(client_in), 0, (struct sockaddr *)&client, &fromlen) < 1)
             {
                 perror("erreur de reception -> ");
                 exit(-3);
             }
 
-            printf("in server_recv : %s \n", buf);
+            printf("in server_recv : input : %c from player no : %d \n", client_in.input, client_in.id);
         }
     }
     else
