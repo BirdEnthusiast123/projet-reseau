@@ -18,7 +18,7 @@ Rendre une archive `.zip` dont le nom contiendra nos noms et prénoms. Cette arc
 
 ## Serveur
 - Sujet: `Le serveur maintient l’état actuel du jeu et est chargé de calculer et mettre à jour les nouvelles positions des joueurs.`
-- Usage: `./serveur [port_serveur] [refresh_rate]` où `refresh_rate` est le temps en millisecondes entre chaque envoi aux client⸱e⸱s. `refresh_rate` n'influe pas sur la gestion des inputs reçus par le serveur, envoyés par les client⸱e⸱s. (e.g. Si le/la client⸱e envoie les inputs `'z', 's' et 'd'` les uns après les autres, tous devront être pris en compte. Le dernier input en mémoire après écoulement des `refresh_rate`ms sera celui renvoyé au client).
+- Usage: `./serveur [port_serveur] [refresh_rate]` où `refresh_rate` est le temps en millisecondes entre chaque envoi aux client⸱e⸱s. `refresh_rate` n'influe pas sur la gestion des inputs reçus par le serveur, envoyés par les client⸱e⸱s. (e.g. Si le/la client⸱e envoie les inputs `'z', 's' et 'd'` les uns après les autres, tous devront être pris en compte. Le dernier input en mémoire après écoulement des `refresh_rate`ms sera celui utilisé pour les calculs).
 - Doit également accepter les commandes :
     - `restart` qui permet de redémarrer;
     - `quit` qui permet de quitter.
@@ -30,7 +30,7 @@ Rendre une archive `.zip` dont le nom contiendra nos noms et prénoms. Cette arc
 ## Détails d'implémentation
 Structures de données à respecter présentes dans `common.h`:
 - `client_init`: contient les informations nécessaires pour indiquer le nombre de joueurs derrière un même client. Elle doit être envoyée dès que la tentative de connexion d’un client a été acceptée.
-- `client_input`: contient les informations envoyées par le client lorsqu’une commande est passée (parmi: `'z','q','s','d',' ','i','j','k','l','m'`).
+- `client_input`: contient les informations envoyées par le client lorsqu’une commande est passée (parmi: `'z','q','s','d','i','j','k','l',' ','m'`).
 - `display_info`: contient toutes les informations actuelles du plateau de jeu. `board` entre autres.
 - `board`: fait partie de `display_info`, est un tableau de `char` tel que:
     - `0,1,2,3,4`: sont des identifiants de joueurs;
