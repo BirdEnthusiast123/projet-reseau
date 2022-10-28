@@ -1,5 +1,20 @@
-// Serveur : socket, bind, listen, accept, send/receive, close
-// Client  : socket, (bind), connect, send/receive, close
+/*
+Doit etre capable de gerer en meme temps
+    - un timer et son expiration
+    - les inputs du client
+
+idees : 
+    - fork -> enfant s'occupe des inputs client, parent cree un timer, l'attend, tue le proc enfant
+              dangereux parceque duplication des socket et des variables 
+              (necessite pipe/valeur de retour pour communiquer les inputs du client au parent)
+    - thread -> similaire au fork mais necessite moins de ressources (normalement)
+                se rappeler d'utiliser mutex/semaphores pour les sections critiques s'il y en a
+                on peut reutiliser un unique thread en le forcant a attendre pendant la periode de calcul
+                plutot que de fermer/ouvrir a chaque iteration
+                init_sem(S, 0), input : select; P(); get_input; V() // calcul : sleep(2); P(); calcul; V()
+
+Doit egalement envoyer et garder en memoire les id des clients pour les differencier (particulierement en multi local)
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +33,20 @@
 
 #include "common.h"
 
+#define BLUE_ON_BLACK       0
+#define RED_ON_BLACK        2
+#define YELLOW_ON_BLACK     1
+#define MAGENTA_ON_BLACK    3
+#define CYAN_ON_BLACK       4
+
+#define BLUE_ON_BLUE        50
+#define RED_ON_RED          52
+#define YELLOW_ON_YELLOW    51
+#define MAGENTA_ON_MAGENTA  53
+#define CYAN_ON_CYAN        54
+
+#define EMPTY_SQUARE -1
+
 void generate_random_board(char board[XMAX][YMAX])
 {
     for (size_t i = 0; i < XMAX; i++)
@@ -25,10 +54,32 @@ void generate_random_board(char board[XMAX][YMAX])
         for (size_t j = 0; j < YMAX; j++)
         {
             board[i][j] = (rand() % NB_COLORS);
+            if(i == 0)
+                printf("%d, ", (int) board[i][j]);
         }
     }
 }
 
+void init_board(char board[XMAX][YMAX])
+{
+    memset(board, -1, XMAX * YMAX);
+
+    board[10][20] = CYAN_ON_BLACK;
+    board[11][20] = CYAN_ON_CYAN;
+    board[12][20] = CYAN_ON_CYAN;
+    board[13][20] = CYAN_ON_CYAN;
+
+    for (size_t i = 0; i < XMAX; i++)
+    {
+        for (size_t j = 0; j < YMAX; j++)
+        {
+            if (i == 0)
+            {
+                board [i][j] = WALL;
+            }
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -98,17 +149,29 @@ int main(int argc, char **argv)
     
     printf("Connexion with: %d, port no: %d, succesful, message received: %d \n", client.sin_addr.s_addr, client.sin_port, players);
 
-    if(players < 2)
+    int player_id[players];
+    for (size_t i = 0; i < players; i++)
     {
-        int tmp = 1;
-        if (sendto(new_fd, &tmp, 4, 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
+        int already_in_use;
+        do
+        {
+            player_id[i] = rand() % NB_COLORS;
+            already_in_use = 0;
+
+            for (size_t j = 0; j < i; j++)
+                already_in_use = already_in_use || (player_id[i] == player_id[j]);
+        } while (already_in_use);
+        
+        
+        if (sendto(new_fd, &(player_id[i]), 4, 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
         {
             perror("erreur a l'appel de la fonction sendto -> ");
             exit(-2);
         }
     }
 
-    char board[XMAX][YMAX];
+    display_info display_struct;
+    display_struct.winner = -1;
     struct client_input client_in;
     int pid = fork();
 
@@ -129,17 +192,21 @@ int main(int argc, char **argv)
                 exit(-3);
             }
 
-            printf("in server_recv : input : %c from player no : %d \n", client_in.input, client_in.id);
+            printf("in server_recv : input : %d from player no : %d \n", (int)client_in.input, client_in.id);
         }
     }
     else
     {
+        int temp = 23;
         // parent
         while (1)
         {
-            generate_random_board(board);
+            //generate_random_board(display_struct.board);
+            init_board(display_struct.board);
+            display_struct.board[temp][temp] = rand() % NB_COLORS;
+            temp++;
 
-            if (sendto(new_fd, board, XMAX * YMAX, 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
+            if (sendto(new_fd, &display_struct, sizeof(display_struct), 0, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
             {
                 perror("erreur a l'appel de la fonction sendto -> ");
                 pid_t raison;
@@ -149,6 +216,7 @@ int main(int argc, char **argv)
             }
 
             sleep(2);
+            //display_struct.winner = TIE;
         }
     }
 

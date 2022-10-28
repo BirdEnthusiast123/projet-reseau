@@ -8,6 +8,20 @@
 
 #include "common.h"
 
+#define BLUE_ON_BLACK       0
+#define RED_ON_BLACK        2
+#define YELLOW_ON_BLACK     1
+#define MAGENTA_ON_BLACK    3
+#define CYAN_ON_BLACK       4
+
+#define BLUE_ON_BLUE        50
+#define RED_ON_RED          52
+#define YELLOW_ON_YELLOW    51
+#define MAGENTA_ON_MAGENTA  53
+#define CYAN_ON_CYAN        54
+
+#define EMPTY_SQUARE -1
+
 void tune_terminal()
 {
     struct termios term;
@@ -40,6 +54,7 @@ void init_graphics()
     init_pair(MAGENTA_ON_MAGENTA, COLOR_MAGENTA, COLOR_MAGENTA);
     init_pair(CYAN_ON_CYAN, COLOR_CYAN, COLOR_CYAN);
 
+    init_pair(EMPTY_SQUARE, COLOR_BLACK, COLOR_BLACK);
     init_pair(WALL, COLOR_WHITE, COLOR_WHITE);
 }
 
@@ -50,12 +65,84 @@ void display_character(int color, int y, int x, char character)
     attroff(COLOR_PAIR(color));
 }
 
+// TODO: => serveur doit etre au courant des id meme en local et donc les attribuer lui meme au debut
+int prep_send_macro(struct client_input *c_input, char input, int player_count)
+{
+    char macros[6] = {UP, LEFT, DOWN, RIGHT, TRAIL_UP, '\0'};
+    char tmp_str1[6] = "zqsd ";
+    char* tmp_ptr = strchr(tmp_str1, input);
+    if(tmp_ptr != NULL)
+    {
+        // strchr renvoie un pointeur sur premiere occurrence de input dans tmp_str
+        // (tmp_ptr - tmp_str) est l'index de la premiere occurrence
+        // la liste macros a ete construite telle que tmp_str[i] <=> macros[i]
+        c_input[0].input = macros[tmp_ptr - tmp_str1];
+        return 0;
+    }
+    
+    char tmp_str2[6] = "ijklm";
+    tmp_ptr = strchr(tmp_str2, input);
+    if((tmp_ptr != NULL) && (player_count == 2))
+    {
+        c_input[1].input = macros[tmp_ptr - tmp_str2];
+        return 1;
+    }
+
+    // input invalide
+    return -1;
+}
+
 // TODO: ajouter les conventions par exemple: moto := '8', mur := ACS_VLINE
+char map_color_to_char(char color)
+{
+    char res;
+    if((color == EMPTY_SQUARE) || (color == WALL))
+        res = ACS_VLINE;
+    else if((color >= BLUE_ON_BLACK) && (color <= CYAN_ON_BLACK))
+        res = '8';
+    else if((color >= BLUE_ON_BLUE) && (color <= CYAN_ON_CYAN))
+        res = ACS_VLINE;
+    else
+    {
+        res = WALL;
+        // char non reconnu, lancer erreur ?
+    }
+
+    return res;
+}   
+
 void print_game(char board[XMAX][YMAX])
 {
+    char tmp;
     for (size_t x = 0; x < XMAX; x++)
+    {
         for (size_t y = 0; y < YMAX; y++)
-            display_character(board[x][y], y, x, 'X');
+        {
+            tmp = board[x][y];
+            display_character(tmp, y, x, map_color_to_char(tmp));
+        }
+    }
+}
+
+void game_over_display(int winner_id, struct client_input* p_strct_cli_input, int player_count)
+{
+    for (int i = 0; i < player_count; i++)
+    {
+        if (winner_id == p_strct_cli_input[i].id)
+        {
+            // local player won
+        }   
+    }
+    
+    if (winner_id == TIE)
+    {
+        exit(EXIT_SUCCESS);
+        // nobody won
+    }
+    else
+    {
+        // distant player won
+    }
 }
 
 int main(int argc, char *argv[])
@@ -73,8 +160,8 @@ int main(int argc, char *argv[])
     client_info.nb_players = atoi(argv[3]);
 
     // Buffers de réception et d'envoi
-    struct client_input client_input;
-    display_info display;
+    struct client_input client_input[client_info.nb_players];
+    display_info display_struct;
 
     // Paramètres de connexion
     // Socket
@@ -100,26 +187,26 @@ int main(int argc, char *argv[])
     // Envoi du nombre de joueurs au server
     CHECK(
         sendto(
-            sockfd, 
-            &(client_info.nb_players), 
-            sizeof(client_info.nb_players), 
-            0, 
-            (struct sockaddr *)&server_struct, 
+            sockfd,
+            &(client_info.nb_players),
+            sizeof(client_info.nb_players),
+            0,
+            (struct sockaddr *)&server_struct,
             sizeof_struct
         ) 
         > 0
     );
 
     // Réception de l'id que nous donne le server
-    if(client_info.nb_players < 2)
+    for (int i = 0; i < client_info.nb_players; i++)
     {
         CHECK(
             recvfrom(
-                sockfd, 
-                &(client_input.id), 
-                sizeof(client_input.id), 
-                0, 
-                (struct sockaddr *)&server_struct, 
+                sockfd,
+                &(client_input[i].id),
+                sizeof(client_input[i].id),
+                0,
+                (struct sockaddr *)&server_struct,
                 &sizeof_struct
             ) 
             > 0
@@ -139,19 +226,25 @@ int main(int argc, char *argv[])
         // Gestion d'envoi d'inputs du client au server
         if (FD_ISSET(STDIN_FILENO, &tmp))
         {
-            CHECK(read(STDIN_FILENO, &(client_input.input), sizeof(client_input.input)) > 0);
+            // TODO: traduire char -> MACRO, et n'envoyer au serveur que si input valide
+            char c_buf;
+            CHECK(read(STDIN_FILENO, &c_buf, sizeof(c_buf)) > 0);
 
-            CHECK(
-                sendto(
-                    sockfd, 
-                    &client_input, 
-                    sizeof(client_input), 
-                    0, 
-                    (struct sockaddr *)&server_struct, 
-                    sizeof_struct
-                ) 
-                > 0
-            );
+            int sender_id = prep_send_macro(client_input, c_buf, client_info.nb_players);
+            if(sender_id != -1)
+            {
+                CHECK(
+                    sendto(
+                        sockfd,
+                        &(client_input[sender_id]),
+                        sizeof(client_input[sender_id]),
+                        0,
+                        (struct sockaddr *)&server_struct,
+                        sizeof_struct
+                    ) 
+                    > 0
+                );
+            }
         }
 
         // Réception et affichage du board envoyé par le serveur
@@ -160,18 +253,25 @@ int main(int argc, char *argv[])
             // TODO: Peut etre tester (recvfrom(...) == XMAX * YMAX) si faux alors pertes/manque
             CHECK(
                 recvfrom(
-                    sockfd, 
-                    display.board, 
-                    XMAX * YMAX, 
-                    0, 
-                    (struct sockaddr *)&server_struct, 
+                    sockfd,
+                    &display_struct,
+                    sizeof(display_struct),
+                    0,
+                    (struct sockaddr *)&server_struct,
                     &sizeof_struct
                 ) 
                 > 0
             );
-            clear();
-            print_game(display.board);
-            refresh();
+            if (display_struct.winner != NO_WINNER_YET)
+            {
+                game_over_display(display_struct.winner, client_input, client_info.nb_players);
+            }
+            else
+            {
+                clear();
+                print_game(display_struct.board);
+                refresh();
+            }
         }
 
         // Réinitialiser le mask de select
