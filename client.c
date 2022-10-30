@@ -98,10 +98,10 @@ char map_color_to_char(char color)
     char res;
     if((color == EMPTY_SQUARE) || (color == WALL))
         res = ACS_VLINE;
-    else if((color >= BLUE_ON_BLACK) && (color <= CYAN_ON_BLACK))
-        res = '8';
     else if((color >= BLUE_ON_BLUE) && (color <= CYAN_ON_CYAN))
         res = ACS_VLINE;
+    else if((color >= BLUE_ON_BLACK) && (color <= CYAN_ON_BLACK))
+        res = '8';
     else
     {
         res = WALL;
@@ -122,27 +122,54 @@ void print_game(char board[XMAX][YMAX])
             display_character(tmp, y, x, map_color_to_char(tmp));
         }
     }
+    mvaddstr(0, XMAX/2 - strlen("C-TRON")/2, "C-TRON");
 }
 
 void game_over_display(int winner_id, struct client_input* p_strct_cli_input, int player_count)
 {
-    for (int i = 0; i < player_count; i++)
+    if(player_count > 1)
     {
-        if (winner_id == p_strct_cli_input[i].id)
+        for (int i = 0; i < player_count; i++)
         {
-            // local player won
-        }   
-    }
-    
-    if (winner_id == TIE)
-    {
-        exit(EXIT_SUCCESS);
-        // nobody won
+            if (winner_id == p_strct_cli_input[i].id)
+            {
+                mvaddstr(YMAX/2, XMAX/2, "Player who won is none other than:");
+                char winner[2];
+                snprintf(winner, 2, "%d", winner_id);
+                mvaddstr((YMAX/2) + 1, XMAX/2, winner);                
+            }   
+        }
+
+        if(winner_id == TIE)
+        {
+            // nobody won
+            mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
+        }
     }
     else
     {
-        // distant player won
+        // player count == 1
+        if(winner_id == p_strct_cli_input[0].id)
+        {
+            // local player won
+            mvaddstr(YMAX/2, XMAX/2, "You won, great job!");
+        }
+        else if (winner_id == TIE)
+        {
+            // nobody won
+            mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
+        }
+        else
+        {
+            // distant player won
+            mvaddstr(YMAX/2, XMAX/2, "You lost, better luck next time!");
+        }
     }
+
+    refresh();
+
+    sleep(10);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])

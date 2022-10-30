@@ -14,6 +14,8 @@ idees :
                 init_sem(S, 0), input : select; P(); get_input; V() // calcul : sleep(2); P(); calcul; V()
 
 Doit egalement envoyer et garder en memoire les id des clients pour les differencier (particulierement en multi local)
+
+Faire les calculs de collisions pour tous les joueurs afin de savoir s'il y a egalite / tie
 */
 
 #include <stdio.h>
@@ -216,7 +218,8 @@ int main(int argc, char **argv)
             }
 
             sleep(2);
-            //display_struct.winner = TIE;
+            display_struct.winner = player_id[0];
+            printf("%d\n", player_id[0]);
         }
     }
 
