@@ -33,6 +33,10 @@
 
 #define WALL 111
 
+// macros ajoutees 
+#define NO_WINNER_YET -1
+#define EMPTY_SQUARE -1
+
 #define max(a, b) \
     ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \

@@ -20,8 +20,6 @@
 #define MAGENTA_ON_MAGENTA  53
 #define CYAN_ON_CYAN        54
 
-#define EMPTY_SQUARE -1
-
 void tune_terminal()
 {
     struct termios term;
