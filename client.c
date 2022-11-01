@@ -125,7 +125,12 @@ void print_game(char board[XMAX][YMAX])
 
 void game_over_display(int winner_id, struct client_input* p_strct_cli_input, int player_count)
 {
-    if(player_count > 1)
+    if(winner_id == TIE)
+    {
+        // nobody won
+        mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
+    }
+    else if(player_count > 1)
     {
         for (int i = 0; i < player_count; i++)
         {
@@ -137,12 +142,6 @@ void game_over_display(int winner_id, struct client_input* p_strct_cli_input, in
                 mvaddstr((YMAX/2) + 1, XMAX/2, winner);                
             }   
         }
-
-        if(winner_id == TIE)
-        {
-            // nobody won
-            mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
-        }
     }
     else
     {
@@ -151,11 +150,6 @@ void game_over_display(int winner_id, struct client_input* p_strct_cli_input, in
         {
             // local player won
             mvaddstr(YMAX/2, XMAX/2, "You won, great job!");
-        }
-        else if (winner_id == TIE)
-        {
-            // nobody won
-            mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
         }
         else
         {
@@ -204,11 +198,6 @@ int main(int argc, char *argv[])
 
     CHECK(connect(sockfd, (struct sockaddr *)&server_struct, sizeof_struct) != -1);
 
-    // tune_terminal -> les inputs sont détectés directement
-    // plus besoin de la touche 'entrée'
-    tune_terminal();
-    init_graphics();
-
     // Envoi du nombre de joueurs au server
     CHECK(
         sendto(
@@ -236,6 +225,19 @@ int main(int argc, char *argv[])
             ) 
             > 0
         );
+    }
+
+    // tune_terminal -> les inputs sont détectés directement
+    // plus besoin de la touche 'entrée'
+    tune_terminal();
+    init_graphics();
+
+    // Attente d'un.e autre joueur.euse distant.e
+    if(client_info.nb_players < 2)
+    {
+        clear();
+        mvaddstr(YMAX/2, XMAX/2, "Waiting for players (1/2) ...");
+        refresh();
     }
 
     // Initialisation 'select'
