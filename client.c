@@ -117,7 +117,7 @@ void print_game(char board[XMAX][YMAX])
         for (size_t y = 0; y < YMAX; y++)
         {
             tmp = board[x][y];
-            display_character(tmp, y, x, map_color_to_char(tmp));
+            display_character(tmp, y, x, map_board_to_char(tmp));
         }
     }
     mvaddstr(0, XMAX/2 - strlen("C-TRON")/2, "C-TRON");
