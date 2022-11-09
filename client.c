@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 #include <termios.h>
-
 #include <ncurses.h>
 
 #include "common.h"
@@ -63,7 +62,7 @@ void display_character(int color, int y, int x, char character)
     attroff(COLOR_PAIR(color));
 }
 
-// TODO: => serveur doit etre au courant des id meme en local et donc les attribuer lui meme au debut
+// Traduction d'un char (input clavier) en macro lisible par le server 
 int prep_send_macro(struct client_input *c_input, char input, int player_count)
 {
     char macros[6] = {UP, LEFT, DOWN, RIGHT, TRAIL_UP, '\0'};
@@ -90,15 +89,16 @@ int prep_send_macro(struct client_input *c_input, char input, int player_count)
     return -1;
 }
 
-// TODO: ajouter les conventions par exemple: moto := '8', mur := ACS_VLINE
-char map_color_to_char(char color)
+// Renvoie le char associée à la valeur d'une case de la grille
+// Si la valeur n'est pas reconnue -> affiche un mûr
+char map_board_to_char(char board_value)
 {
     char res;
-    if((color == EMPTY_SQUARE) || (color == WALL))
+    if((board_value == EMPTY_SQUARE) || (board_value == WALL))
         res = ACS_VLINE;
-    else if((color >= BLUE_ON_BLUE) && (color <= CYAN_ON_CYAN))
+    else if((board_value >= BLUE_ON_BLUE) && (board_value <= CYAN_ON_CYAN))
         res = ACS_VLINE;
-    else if((color >= BLUE_ON_BLACK) && (color <= CYAN_ON_BLACK))
+    else if((board_value >= BLUE_ON_BLACK) && (board_value <= CYAN_ON_BLACK))
         res = '8';
     else
     {
