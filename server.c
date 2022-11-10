@@ -20,6 +20,14 @@
 #define RES_INTERNET 2
 
 #define NB_CLIENT_MAX 2
+#define BUF_MAX_SIZE 64
+
+typedef struct{
+    int sockfd;
+    int* client_fd;
+    struct sockaddr_in* clients;
+    struct client_input* client_input;
+} thread_struct;
 
 void init_board(display_info disp_struct, struct client_input* client_struct)
 {
@@ -45,6 +53,53 @@ void init_board(display_info disp_struct, struct client_input* client_struct)
     client_struct[0].input = UP;
     disp_struct.board[(XMAX / 2) + 3][YMAX / 2] = client_struct[1].id;
     client_struct[1].input = DOWN;
+}
+
+int max_fd(int *arr, int arr_size, int sockfd)
+{
+    int max = arr[0];
+    for (int i = 0; i < arr_size; i++)
+        max = (max < arr[i]) ? arr[i] : max;
+
+    return (max > sockfd) ? max : sockfd;
+}
+
+void* thread_fct (void* thread_arg)
+{
+    thread_struct* tmp_thrd_arg = thread_arg;
+
+    fd_set ens, tmp;
+    FD_ZERO(&ens);
+    FD_SET(tmp_thrd_arg->sockfd, &ens);
+    tmp = ens;
+
+    while (1)
+    {
+        // Attente bloquante d'input de client
+        CHECK(
+            select(
+                max_fd(
+                    tmp_thrd_arg->client_fd, 
+                    NB_CLIENT_MAX, 
+                    tmp_thrd_arg->sockfd
+                ) + 1, 
+                &tmp, NULL, NULL, NULL
+            )
+            != -1
+        );
+
+        // message receiving/sending to other clients
+        for (int i = 0; i < NB_CLIENT_MAX; i++)
+        {
+            if (FD_ISSET(tmp_thrd_arg->client_fd[i], &tmp))
+            {
+                // Le client numéro i a envoyé un input
+                // recvfrom(tmp_thrd_arg->clients[i], ..., (struct sockaddr *) tmp_thrd_arg->clients[i]);
+            }
+        }
+        tmp = ens;
+    }
+
 }
 
 int main(int argc, char **argv)
@@ -75,6 +130,9 @@ int main(int argc, char **argv)
 
     // creation de la socket
     CHECK((sockfd = socket(AF_INET, SOCK_STREAM, 0)) != -1);
+
+    // buffer pour les entrées 
+    char buf_terminal_input[BUF_MAX_SIZE];
 
     // initialisation de la structure d'adresse du recepteur (pg local)
     memset(&my_addr, 0, sin_size);
@@ -134,8 +192,31 @@ int main(int argc, char **argv)
     // TODO : Initialiser un timer de refresh rate ms
     // TODO : à la fin de ce timer calculer et envoyer la structure
     // avec la grille aux clients
+    // TODO : Envoyer un signal au thread pour le terminer
     // TODO : Si qqun a gagné / égalité, envoyer l'info aux clients et terminer execution
-    // (attendre qq secondes, fermer les threads/semaphores/fd/...)
+    // (attendre quit dans terminal server, fermer les threads/semaphores/fd/...)
+
+    // Fin de partie, attendre "restart" ou "quit"
+    fd_set ens, tmp;
+    FD_ZERO(&ens);
+    FD_SET(sockfd, &ens);
+    FD_SET(STDIN_FILENO, &ens);
+    tmp = ens;
+
+    int sender_fd;
+
+    while (1)
+    {
+        CHECK(select(max_fd(client_fd, NB_CLIENT_MAX, sockfd) + 1, &tmp, NULL, NULL, NULL) != -1);
+
+        if (FD_ISSET(STDIN_FILENO, &tmp))
+        {
+            CHECK(read(STDIN_FILENO, buf_terminal_input, BUF_MAX_SIZE) > 0);
+            // TODO : Si "buf_terminal_input" == "restart" ou "quit" faire des trucs en conséquence
+        }
+
+        tmp = ens;
+    }
 
     // fermeture de la socket
     close(client_fd[0]);
