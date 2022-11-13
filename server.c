@@ -94,7 +94,8 @@ void* thread_fct (void* thread_arg)
             if (FD_ISSET(tmp_thrd_arg->client_fd[i], &tmp))
             {
                 // Le client numéro i a envoyé un input
-                // recvfrom(tmp_thrd_arg->clients[i], ..., (struct sockaddr *) tmp_thrd_arg->clients[i]);
+                // unsigned int sin_size = sizeof(struct sockaddr_in);
+                // recvfrom(tmp_thrd_arg->client_fd[i], ..., (struct sockaddr *)(&(tmp_thrd_arg->clients[i])), &sin_size);
             }
         }
         tmp = ens;
@@ -142,8 +143,11 @@ int main(int argc, char **argv)
 
     // bind: association de la socket et des param reseaux du recepteur
     CHECK(bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == 0);
-    char *ip_str = inet_ntoa(my_addr.sin_addr); // Promis c'est comme ça que ça s'utilise
-    printf("Bind successful. IP @: %s, port no: %d\n", ip_str, SERV_PORT);
+    char str_ip_addr[64];
+    CHECK(inet_ntop(AF_INET, &(my_addr.sin_addr), str_ip_addr, sizeof(str_ip_addr)) != NULL);
+    // retourne 0.0.0.0 pour des raisons qui m'echappent mais le client 
+    // peut utiliser 0.0.0.0 comme argument (sur turing.unistra au moins)
+    printf("Bind successful. IP @: %s, port no: %d\n", str_ip_addr, SERV_PORT);
 
     // listen
     CHECK(listen(sockfd, NB_CLIENT_MAX) != -1);
@@ -202,8 +206,6 @@ int main(int argc, char **argv)
     FD_SET(sockfd, &ens);
     FD_SET(STDIN_FILENO, &ens);
     tmp = ens;
-
-    int sender_fd;
 
     while (1)
     {
