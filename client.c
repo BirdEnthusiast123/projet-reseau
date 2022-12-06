@@ -4,6 +4,8 @@
 #include <time.h>
 #include <termios.h>
 
+#include <sys/select.h>
+
 #include <ncurses.h>
 
 #include "common.h"
@@ -63,7 +65,6 @@ void display_character(int color, int y, int x, char character)
     attroff(COLOR_PAIR(color));
 }
 
-// TODO: => serveur doit etre au courant des id meme en local et donc les attribuer lui meme au debut
 int prep_send_macro(struct client_input *c_input, char input, int player_count)
 {
     char macros[6] = {UP, LEFT, DOWN, RIGHT, TRAIL_UP, '\0'};
@@ -90,7 +91,6 @@ int prep_send_macro(struct client_input *c_input, char input, int player_count)
     return -1;
 }
 
-// TODO: ajouter les conventions par exemple: moto := '8', mur := ACS_VLINE
 char map_color_to_char(char color)
 {
     char res;
@@ -139,9 +139,6 @@ void game_over_display(int winner_id)
     }
 
     refresh();
-
-    sleep(10);
-    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -222,7 +219,6 @@ int main(int argc, char *argv[])
         // Gestion d'envoi d'inputs du client au server
         if (FD_ISSET(STDIN_FILENO, &tmp))
         {
-            // TODO: traduire char -> MACRO, et n'envoyer au serveur que si input valide
             char c_buf;
             CHECK(read(STDIN_FILENO, &c_buf, sizeof(c_buf)) > 0);
 
@@ -246,7 +242,6 @@ int main(int argc, char *argv[])
         // Réception et affichage du board envoyé par le serveur
         if (FD_ISSET(sockfd, &tmp))
         {
-            // TODO: Peut etre tester (recvfrom(...) == XMAX * YMAX) si faux alors pertes/manque
             CHECK(
                 recvfrom(
                     sockfd,
@@ -259,7 +254,7 @@ int main(int argc, char *argv[])
                 > 0
             );
 
-            if (display_struct.winner == 0 || display_struct.winner == 1)
+            if (display_struct.winner == 0 || display_struct.winner == 1 || display_struct.winner == TIE)
             {
                 game_over_display(display_struct.winner);
             }
