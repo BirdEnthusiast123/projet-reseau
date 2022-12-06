@@ -20,6 +20,7 @@
 #define LEFT 2
 #define RIGHT 3
 #define TRAIL_UP 4
+#define TRAIL_DOWN ~(TRAIL_UP)
 
 #define SERV_PORT 5555
 #define XMAX 100
@@ -54,6 +55,15 @@
         }                                                   \
     } while (0)
 
+#define TCHK(x) \
+  do { \
+    errno = x; \
+    if (errno != 0) { \
+      fprintf(stderr, "%s:%d: ", __func__, __LINE__); \
+      perror(#x); \
+      exit(EXIT_FAILURE); \
+    } \
+  } while (0)
 
 typedef struct display_info
 {

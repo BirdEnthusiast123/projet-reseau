@@ -3,6 +3,9 @@
 #include <string.h>
 #include <time.h>
 #include <termios.h>
+
+#include <sys/select.h>
+
 #include <ncurses.h>
 
 #include "common.h"
@@ -62,7 +65,6 @@ void display_character(int color, int y, int x, char character)
     attroff(COLOR_PAIR(color));
 }
 
-// Traduction d'un char (input clavier) en macro lisible par le server 
 int prep_send_macro(struct client_input *c_input, char input, int player_count)
 {
     char macros[6] = {UP, LEFT, DOWN, RIGHT, TRAIL_UP, '\0'};
@@ -89,16 +91,14 @@ int prep_send_macro(struct client_input *c_input, char input, int player_count)
     return -1;
 }
 
-// Renvoie le char associée à la valeur d'une case de la grille
-// Si la valeur n'est pas reconnue -> affiche un mûr
-char map_board_to_char(char board_value)
+char map_color_to_char(char color)
 {
     char res;
-    if((board_value == EMPTY_SQUARE) || (board_value == WALL))
+    if((color == EMPTY_SQUARE) || (color == WALL))
         res = ACS_VLINE;
-    else if((board_value >= BLUE_ON_BLUE) && (board_value <= CYAN_ON_CYAN))
+    else if((color >= BLUE_ON_BLUE) && (color <= CYAN_ON_CYAN))
         res = ACS_VLINE;
-    else if((board_value >= BLUE_ON_BLACK) && (board_value <= CYAN_ON_BLACK))
+    else if((color >= BLUE_ON_BLACK) && (color <= CYAN_ON_BLACK))
         res = '8';
     else
     {
@@ -117,51 +117,28 @@ void print_game(char board[XMAX][YMAX])
         for (size_t y = 0; y < YMAX; y++)
         {
             tmp = board[x][y];
-            display_character(tmp, y, x, map_board_to_char(tmp));
+            display_character(tmp, y, x, map_color_to_char(tmp));
         }
     }
     mvaddstr(0, XMAX/2 - strlen("C-TRON")/2, "C-TRON");
 }
 
-void game_over_display(int winner_id, struct client_input* p_strct_cli_input, int player_count)
+void game_over_display(int winner_id)
 {
     if(winner_id == TIE)
     {
         // nobody won
         mvaddstr(YMAX/2, XMAX/2, "Nobody won, its a tie!");
     }
-    else if(player_count > 1)
-    {
-        for (int i = 0; i < player_count; i++)
-        {
-            if (winner_id == p_strct_cli_input[i].id)
-            {
-                mvaddstr(YMAX/2, XMAX/2, "Player who won is none other than:");
-                char winner[2];
-                snprintf(winner, 2, "%d", winner_id);
-                mvaddstr((YMAX/2) + 1, XMAX/2, winner);                
-            }   
-        }
-    }
     else
     {
-        // player count == 1
-        if(winner_id == p_strct_cli_input[0].id)
-        {
-            // local player won
-            mvaddstr(YMAX/2, XMAX/2, "You won, great job!");
-        }
-        else
-        {
-            // distant player won
-            mvaddstr(YMAX/2, XMAX/2, "You lost, better luck next time!");
-        }
+        mvaddstr(YMAX/2, XMAX/2, "Winner is none other than:");
+        char winner[2];
+        snprintf(winner, 2, "%d", winner_id);
+        mvaddstr((YMAX/2) + 1, XMAX/2, winner);                
     }
 
     refresh();
-
-    sleep(10);
-    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -211,20 +188,9 @@ int main(int argc, char *argv[])
         > 0
     );
 
-    // Réception de l'id que nous donne le server
-    for (int i = 0; i < client_info.nb_players; i++)
+    for(int i = 0; i < client_info.nb_players; i++)
     {
-        CHECK(
-            recvfrom(
-                sockfd,
-                &(client_input[i].id),
-                sizeof(client_input[i].id),
-                0,
-                (struct sockaddr *)&server_struct,
-                &sizeof_struct
-            ) 
-            > 0
-        );
+        client_input[i].id = i;
     }
 
     // tune_terminal -> les inputs sont détectés directement
@@ -253,7 +219,6 @@ int main(int argc, char *argv[])
         // Gestion d'envoi d'inputs du client au server
         if (FD_ISSET(STDIN_FILENO, &tmp))
         {
-            // TODO: traduire char -> MACRO, et n'envoyer au serveur que si input valide
             char c_buf;
             CHECK(read(STDIN_FILENO, &c_buf, sizeof(c_buf)) > 0);
 
@@ -277,7 +242,6 @@ int main(int argc, char *argv[])
         // Réception et affichage du board envoyé par le serveur
         if (FD_ISSET(sockfd, &tmp))
         {
-            // TODO: Peut etre tester (recvfrom(...) == XMAX * YMAX) si faux alors pertes/manque
             CHECK(
                 recvfrom(
                     sockfd,
@@ -289,9 +253,10 @@ int main(int argc, char *argv[])
                 ) 
                 > 0
             );
-            if (display_struct.winner != NO_WINNER_YET)
+
+            if (display_struct.winner == 0 || display_struct.winner == 1 || display_struct.winner == TIE)
             {
-                game_over_display(display_struct.winner, client_input, client_info.nb_players);
+                game_over_display(display_struct.winner);
             }
             else
             {
