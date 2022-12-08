@@ -20,7 +20,6 @@
 #define LEFT 2
 #define RIGHT 3
 #define TRAIL_UP 4
-#define TRAIL_DOWN ~(TRAIL_UP)
 
 #define SERV_PORT 5555
 #define XMAX 100
@@ -33,10 +32,6 @@
 #define TV struct timeval
 
 #define WALL 111
-
-// macros ajoutees 
-#define NO_WINNER_YET -1
-#define EMPTY_SQUARE -1
 
 #define max(a, b) \
     ({ __typeof__ (a) _a = (a); \
@@ -55,15 +50,6 @@
         }                                                   \
     } while (0)
 
-#define TCHK(x) \
-  do { \
-    errno = x; \
-    if (errno != 0) { \
-      fprintf(stderr, "%s:%d: ", __func__, __LINE__); \
-      perror(#x); \
-      exit(EXIT_FAILURE); \
-    } \
-  } while (0)
 
 typedef struct display_info
 {

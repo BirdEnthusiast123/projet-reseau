@@ -32,6 +32,21 @@
 #define GAME_OVER (THRD_RESTART | THRD_QUIT)
 #define GAME_ONGOING ~(GAME_OVER)
 
+#define EMPTY_SQUARE -1
+#define NO_WINNER_YET -1
+#define TRAIL_DOWN ~(TRAIL_UP)
+
+#define TCHK(x) \
+  do { \
+    errno = x; \
+    if (errno != 0) { \
+      fprintf(stderr, "%s:%d: ", __func__, __LINE__); \
+      perror(#x); \
+      exit(EXIT_FAILURE); \
+    } \
+  } while (0)
+
+
 typedef struct{
     int sockfd, network_type;
     int* client_fd;
