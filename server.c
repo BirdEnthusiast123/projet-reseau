@@ -350,6 +350,7 @@ int main(int argc, char **argv)
         "Game will start !!!\n", clients[1].sin_addr.s_addr, clients[1].sin_port);
     }
 
+    // Initalisation argument thread
     thread_struct str_thread_arg;
     str_thread_arg.sockfd = sockfd;
     str_thread_arg.network_type = res_type;
@@ -373,23 +374,21 @@ int main(int argc, char **argv)
     int player_wall[NB_CLIENT_MAX] = {TRAIL_UP, TRAIL_UP};
     str_thread_arg.player_wall = player_wall;
 
-
+    // thread s'occupe de la partie reception
     pthread_t id;
     TCHK(pthread_create(&id, NULL, thread_fct, &str_thread_arg));
-    // TODO : à la fin de ce timer calculer et envoyer la structure
-    // avec la grille aux clients
-    // TODO : Envoyer un signal au thread pour le terminer
-    // TODO : Si qqun a gagné / égalité, envoyer l'info aux clients et terminer execution
-    // (attendre quit dans terminal server, fermer les threads/semaphores/fd/...)
 
-    // Fin de partie, attendre "restart" ou "quit"
+    // main s'occupe de rafraichir et envoyer la grille 
     display_info display_struct;
     do
     {
+        // grille
         init_board(&display_struct, client_in);
         game_status = GAME_ONGOING;
-        player_wall[0] = TRAIL_UP;
+        
+        // joueurs
         player_wall[1] = TRAIL_UP;
+        player_wall[0] = TRAIL_UP;
         int player_pos[NB_CLIENT_MAX][2] = {{(XMAX / 2) - 3, YMAX / 2}, {(XMAX / 2) + 3, YMAX / 2}};
 
         while (display_struct.winner == NO_WINNER_YET)
